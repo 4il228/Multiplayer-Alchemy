@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AetherAlchemist | Multiplayer Game Room</title>
+<!-- Tailwind CSS with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&amp;family=Inter:wght@400;500&amp;family=Montserrat:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#ffb866",
+                    "secondary-fixed": "#ebdcff",
+                    "on-primary-container": "#6e4200",
+                    "surface": "#19120b",
+                    "on-secondary": "#382759",
+                    "surface-bright": "#40382f",
+                    "secondary-fixed-dim": "#d3bcf9",
+                    "secondary-container": "#4f3d71",
+                    "surface-container": "#261e17",
+                    "on-secondary-fixed": "#231043",
+                    "on-tertiary-container": "#4a4a60",
+                    "secondary": "#d3bcf9",
+                    "surface-container-high": "#302921",
+                    "on-primary": "#482900",
+                    "inverse-surface": "#efe0d4",
+                    "surface-variant": "#3c332b",
+                    "on-surface": "#efe0d4",
+                    "on-tertiary": "#2f2e43",
+                    "on-error": "#690005",
+                    "primary-container": "#ffab40",
+                    "on-error-container": "#ffdad6",
+                    "error-container": "#93000a",
+                    "background": "#19120b",
+                    "primary": "#ffd09f",
+                    "on-surface-variant": "#d8c3b0",
+                    "on-background": "#efe0d4",
+                    "tertiary-container": "#bcbad5",
+                    "surface-dim": "#19120b",
+                    "outline-variant": "#534435",
+                    "on-secondary-fixed-variant": "#4f3d71",
+                    "inverse-primary": "#875200",
+                    "tertiary-fixed": "#e2e0fc",
+                    "surface-container-lowest": "#130d07",
+                    "on-tertiary-fixed": "#1a1a2e",
+                    "surface-container-highest": "#3c332b",
+                    "on-tertiary-fixed-variant": "#45455b",
+                    "on-primary-fixed": "#2b1700",
+                    "tertiary-fixed-dim": "#c6c4df",
+                    "tertiary": "#d8d6f1",
+                    "outline": "#a08e7c",
+                    "primary-fixed-dim": "#ffb866",
+                    "on-secondary-container": "#c1abe7",
+                    "on-primary-fixed-variant": "#673d00",
+                    "inverse-on-surface": "#372f27",
+                    "error": "#ffb4ab",
+                    "surface-container-low": "#211a13",
+                    "primary-fixed": "#ffddba"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "sm": "8px",
+                    "md": "16px",
+                    "xl": "48px",
+                    "container-max": "1440px",
+                    "unit": "4px",
+                    "gutter": "20px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "headline-sm": ["Playfair Display"],
+                    "body-md": ["Inter"],
+                    "label-sm": ["Montserrat"],
+                    "headline-md": ["Playfair Display"],
+                    "label-bold": ["Montserrat"],
+                    "display-lg": ["Playfair Display"],
+                    "headline-lg-mobile": ["Playfair Display"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-sm": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "1.0", "fontWeight": "500"}],
+                    "headline-md": ["32px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                    "label-bold": ["14px", {"lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-panel {
+            background: rgba(45, 27, 77, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-pill {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .arcane-grid {
+            background-image: radial-gradient(circle at 1px 1px, rgba(255, 171, 64, 0.05) 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+        .glow-amber {
+            box-shadow: 0 0 20px rgba(255, 171, 64, 0.3);
+        }
+        .shimmer-bar {
+            position: relative;
+            overflow: hidden;
+        }
+        .shimmer-bar::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+            100% { left: 100%; }
+        }
+        .drag-glow-red {
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+            border-color: rgba(239, 68, 68, 0.8) !important;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen font-body-md overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- Mystical Background -->
+
+<!-- App Shell -->
+<div class="relative z-10 flex flex-col h-screen">
+<!-- TopAppBar (JSON Instruction: style_shell_layout) -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-lg py-md bg-transparent">
+<!-- Left: Room Code -->
+<div class="flex items-center gap-md">
+<div class="glass-pill px-md py-sm rounded-full flex items-center gap-sm group cursor-pointer hover:bg-white/10 transition-all">
+<span class="font-label-bold text-label-bold text-primary tracking-widest uppercase">X7K2P9</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">content_copy</span>
+</div>
+</div>
+<!-- Center: Presence Indicators -->
+<div class="flex items-center gap-md glass-pill px-lg py-sm rounded-full">
+<div class="group relative flex items-center">
+<div class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+<span class="absolute top-full mt-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-surface-container-high px-sm py-xs rounded text-[10px] font-label-bold whitespace-nowrap border border-white/10">Anna (Red)</span>
+</div>
+<div class="group relative flex items-center">
+<div class="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+<span class="absolute top-full mt-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-surface-container-high px-sm py-xs rounded text-[10px] font-label-bold whitespace-nowrap border border-white/10">Boris (Blue)</span>
+</div>
+<div class="group relative flex items-center">
+<div class="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></div>
+<span class="absolute top-full mt-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-surface-container-high px-sm py-xs rounded text-[10px] font-label-bold whitespace-nowrap border border-white/10">Clara (Green)</span>
+</div>
+<div class="h-4 w-px bg-white/10 mx-xs"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-tighter">3 Alchemists Present</span>
+</div>
+<!-- Right: Actions -->
+<div class="flex items-center gap-md">
+<button class="px-lg py-sm font-label-bold text-label-bold border-[1.5px] border-primary/40 rounded-lg text-primary hover:bg-primary/10 hover:border-primary transition-all active:scale-95">
+                    Clear Board
+                </button>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary-container cursor-pointer hover:scale-110 transition-transform">settings</span>
+<span class="material-symbols-outlined text-primary-container cursor-pointer hover:scale-110 transition-transform">account_circle</span>
+</div>
+</div>
+</header>
+<!-- Main Layout Content -->
+<main class="flex-1 flex mt-20 p-md gap-md">
+<!-- SideNavBar (JSON Instruction: style_shell_layout) - Mimicked Sidebar -->
+<div class="hidden lg:flex flex-col w-[80px] h-full gap-md items-center py-lg glass-panel rounded-2xl border-white/10">
+<img class="w-10 h-10 mb-xl" data-alt="A small, glowing amber icon of an alchemical flask or potion bottle, styled in a minimalist gold filigree against a deep dark purple background, fitting the AetherAlchemist brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYlbnTLEqxdPmaBxWfxeHXOflV_-_SKam1WoYlrxNTaUuEO8leME7XDD2ymoe6GhZyg1Kh0TD6e9KBOiP9fsZL8hjjAdwTVFbSJbIU4LX-mlnWBujDDI1_XgmmVHuhOvTm7LdlzWYTrx4-7rXf0CD3L9UTDv35KXEpqFkrpcTWnUc7bkRIr_793ejxcvHtriNKTnCccK2Htghe8rgGR65ahz_71Jx2JY8hxW18wzK7cmZo-Tt8uLGc0haTUwq6ab_1ZeSRwHzaXAA"/>
+<nav class="flex flex-col gap-lg flex-1">
+<div class="bg-primary/20 text-primary border-r-4 border-primary p-md flex items-center justify-center transition-all">
+<span class="material-symbols-outlined" data-weight="fill">science</span>
+</div>
+<div class="text-on-surface-variant p-md flex items-center justify-center hover:bg-white/5 cursor-pointer transition-all">
+<span class="material-symbols-outlined">auto_stories</span>
+</div>
+<div class="text-on-surface-variant p-md flex items-center justify-center hover:bg-white/5 cursor-pointer transition-all">
+<span class="material-symbols-outlined">group</span>
+</div>
+<div class="text-on-surface-variant p-md flex items-center justify-center hover:bg-white/5 cursor-pointer transition-all">
+<span class="material-symbols-outlined">lock</span>
+</div>
+</nav>
+</div>
+<!-- Central Game Board -->
+<section class="flex-1 glass-panel rounded-3xl relative arcane-grid overflow-hidden group">
+<!-- Branding watermark -->
+<div class="absolute bottom-md left-md opacity-10 pointer-events-none">
+<h2 class="font-headline-md text-headline-md text-primary">AetherAlchemist</h2>
+</div>
+<!-- Game Elements -->
+<div class="relative w-full h-full">
+<!-- Water -->
+<div class="absolute top-[20%] left-[30%] glass-pill px-md py-sm rounded-full cursor-grab active:cursor-grabbing flex items-center gap-sm hover:glow-amber transition-all select-none">
+<span class="text-lg">💧</span>
+<span class="font-label-bold text-label-bold uppercase">Water</span>
+</div>
+<!-- Fire -->
+<div class="absolute top-[45%] left-[20%] glass-pill px-md py-sm rounded-full cursor-grab active:cursor-grabbing flex items-center gap-sm hover:glow-amber transition-all select-none">
+<span class="text-lg">🔥</span>
+<span class="font-label-bold text-label-bold uppercase">Fire</span>
+</div>
+<!-- Steam (Being Dragged by Anna) -->
+<div class="absolute top-[35%] left-[50%] glass-pill px-md py-sm rounded-full flex items-center gap-sm drag-glow-red select-none transform scale-110 z-20">
+<span class="text-lg">🌫</span>
+<span class="font-label-bold text-label-bold uppercase">Steam</span>
+<div class="absolute -top-6 left-0 bg-red-500 text-white text-[9px] px-sm py-[2px] rounded font-bold uppercase tracking-wider">Anna</div>
+</div>
+<!-- Earth -->
+<div class="absolute top-[65%] left-[45%] glass-pill px-md py-sm rounded-full cursor-grab active:cursor-grabbing flex items-center gap-sm hover:glow-amber transition-all select-none">
+<span class="text-lg">🌍</span>
+<span class="font-label-bold text-label-bold uppercase">Earth</span>
+</div>
+<!-- Multiplayer Cursors -->
+<!-- Anna Cursor (Dragging Steam) -->
+<div class="absolute top-[37%] left-[58%] pointer-events-none transition-all duration-200">
+<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M5.65376 12.3745L15.3533 16.5917C16.3262 17.0147 17.3813 16.1437 17.1528 15.097L15.4244 7.18552C15.228 6.28669 14.1207 5.92215 13.4116 6.51314L5.43265 13.1623C4.72355 13.7533 5.08809 14.8606 5.98693 15.057L10.3662 16.0152L12.3168 20.3546C12.7161 21.2427 13.9877 21.1444 14.2494 20.2038" fill="#EF4444"></path>
+</svg>
+<div class="ml-4 -mt-1 bg-red-500 text-white text-[10px] px-sm py-[2px] rounded font-bold uppercase whitespace-nowrap shadow-lg">Anna</div>
+</div>
+<!-- Boris Cursor -->
+<div class="absolute top-[60%] left-[25%] pointer-events-none transition-all duration-300">
+<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M5.65376 12.3745L15.3533 16.5917C16.3262 17.0147 17.3813 16.1437 17.1528 15.097L15.4244 7.18552C15.228 6.28669 14.1207 5.92215 13.4116 6.51314L5.43265 13.1623C4.72355 13.7533 5.08809 14.8606 5.98693 15.057L10.3662 16.0152L12.3168 20.3546C12.7161 21.2427 13.9877 21.1444 14.2494 20.2038" fill="#3B82F6"></path>
+</svg>
+<div class="ml-4 -mt-1 bg-blue-500 text-white text-[10px] px-sm py-[2px] rounded font-bold uppercase whitespace-nowrap shadow-lg">Boris</div>
+</div>
+</div>
+<!-- Toast Notification (Bottom-Left) -->
+<div class="absolute bottom-lg left-lg animate-bounce-slow">
+<div class="glass-panel px-md py-sm rounded-xl flex items-center gap-md border-l-4 border-primary shadow-2xl">
+<div class="bg-primary-container p-sm rounded-full">
+<span class="material-symbols-outlined text-[18px] text-on-primary-container" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">New Discovery</p>
+<p class="font-label-bold text-label-bold text-on-surface">Anna discovered: <span class="text-primary">Steam</span></p>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Sidebar: Discovery Library -->
+<aside class="w-[320px] flex flex-col gap-md">
+<div class="glass-panel rounded-3xl p-lg flex flex-col h-full border-white/10">
+<div class="flex items-center gap-sm mb-lg">
+<img class="w-12 h-12" data-alt="The logo for Multiplayer Alchemy featuring a glowing alchemical glass flask inside a purple shield crest, as seen in Image 5, rendered in high fidelity for a game interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWizYnGMVGWnhv6Q_CYyGToPJNV-4CQ4TLjyVY_G3Z3Kj8VTs7QHL-2vPZn33TQdWmd5BsElf3vG-rdKHf5b4Wwc7SDs5WShTZHi2vek45AePlHFVUU4azbKO6MqOZR22uJs26D4fFpZwEuH3ThMB2ucREedwxv8GeByrHdg1p_J_Bsjy8jbJaOlsFZ_GRC22Dloac4H-sThuCXh56xyBGgKpxcECzgo-SGK4bktl3gS6Xhh4JsyBZG0lJOwSdAFpan9uX9Zjz7uk"/>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-primary leading-tight">Grimoire</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Synthesis Journal</span>
+</div>
+</div>
+<!-- Search -->
+<div class="relative mb-lg">
+<input class="w-full bg-surface-container-low border-none rounded-xl py-md pl-xl pr-md text-on-surface focus:ring-2 focus:ring-primary transition-all placeholder:text-on-surface-variant/40" placeholder="Search elements..." type="text"/>
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+</div>
+<!-- Discovery List (Scrollable Bento Grid Style) -->
+<div class="flex-1 overflow-y-auto pr-sm custom-scrollbar flex flex-col gap-sm">
+<div class="grid grid-cols-2 gap-sm">
+<!-- Water -->
+<div class="glass-pill p-md rounded-xl flex flex-col items-center gap-sm hover:bg-white/10 transition-all cursor-pointer border-white/5">
+<span class="text-2xl">💧</span>
+<span class="font-label-sm text-label-sm uppercase">Water</span>
+</div>
+<!-- Fire -->
+<div class="glass-pill p-md rounded-xl flex flex-col items-center gap-sm hover:bg-white/10 transition-all cursor-pointer border-white/5">
+<span class="text-2xl">🔥</span>
+<span class="font-label-sm text-label-sm uppercase">Fire</span>
+</div>
+<!-- Earth -->
+<div class="glass-pill p-md rounded-xl flex flex-col items-center gap-sm hover:bg-white/10 transition-all cursor-pointer border-white/5">
+<span class="text-2xl">🌍</span>
+<span class="font-label-sm text-label-sm uppercase">Earth</span>
+</div>
+<!-- Air -->
+<div class="glass-pill p-md rounded-xl flex flex-col items-center gap-sm hover:bg-white/10 transition-all cursor-pointer border-white/5">
+<span class="text-2xl">💨</span>
+<span class="font-label-sm text-label-sm uppercase">Air</span>
+</div>
+<!-- Mud -->
+<div class="glass-pill p-md rounded-xl flex flex-col items-center gap-sm hover:bg-white/10 transition-all cursor-pointer border-white/5 opacity-50 grayscale">
+<span class="text-2xl">💩</span>
+<span class="font-label-sm text-label-sm uppercase">Mud</span>
+</div>
+<!-- Steam -->
+<div class="glass-pill p-md rounded-xl flex flex-col items-center gap-sm bg-primary/20 border-primary transition-all cursor-pointer">
+<span class="text-2xl">🌫</span>
+<span class="font-label-sm text-label-sm uppercase text-primary">Steam</span>
+</div>
+</div>
+</div>
+<!-- Discovery Progress -->
+<div class="mt-lg pt-lg border-t border-white/10">
+<div class="flex justify-between items-center mb-sm">
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase">Discovery Progress</span>
+<span class="font-label-bold text-label-bold text-primary">12 / 58</span>
+</div>
+<div class="w-full h-2 bg-surface-container-high rounded-full shimmer-bar">
+<div class="h-full bg-primary-container rounded-full" style="width: 20%;"></div>
+</div>
+<button class="w-full mt-lg py-md bg-primary-container text-on-primary-container font-label-bold text-label-bold rounded-xl hover:scale-[1.02] active:scale-95 transition-all glow-amber uppercase tracking-wider">
+                            Invite Friends
+                        </button>
+</div>
+</div>
+</aside>
+</main>
+</div>
+<!-- Micro-interaction Scripts -->
+<script>
+        // Simple cursor movement simulation
+        document.addEventListener('mousemove', (e) => {
+            const cursors = document.querySelectorAll('.multiplayer-cursor');
+            // This would normally be handled by websockets for real multiplayer
+        });
+
+        // Board interaction micro-effects
+        document.querySelectorAll('.glass-pill').forEach(chip => {
+            chip.addEventListener('mouseenter', () => {
+                // Potential light sound or visual flare
+            });
+        });
+    </script>
+</body></html>
