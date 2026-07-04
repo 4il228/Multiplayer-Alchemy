@@ -3,7 +3,7 @@
 // Вёрстка и значения стилей — из design/game.html и design/tokens.md («Шапка (top bar)»).
 import { useState } from "react";
 import { socket } from "../net/socket";
-import { useGameStore } from "../state/gameStore";
+import { leaveRoom, useGameStore } from "../state/gameStore";
 
 const css = `
 .ma-glass-pill {
@@ -102,6 +102,32 @@ const css = `
 .ma-topbar-clear:active {
   transform: scale(0.95);
 }
+.ma-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ma-topbar-leave {
+  padding: 8px 24px;
+  font-family: Montserrat, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1.5px solid rgba(216, 195, 176, 0.35);
+  border-radius: 0.5rem;
+  color: #d8c3b0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ma-topbar-leave:hover {
+  background: rgba(216, 195, 176, 0.1);
+  border-color: #d8c3b0;
+}
+.ma-topbar-leave:active {
+  transform: scale(0.95);
+}
 `;
 
 function CopyIcon() {
@@ -163,14 +189,19 @@ export default function TopBar() {
         <div className="ma-topbar-divider" />
         <span className="ma-topbar-count">Алхимиков: {players.length}</span>
       </div>
-      {/* Справа: очистка доски */}
-      <button
-        type="button"
-        className="ma-topbar-clear"
-        onClick={() => socket.emit("board:clear")}
-      >
-        Очистить доску
-      </button>
+      {/* Справа: очистка доски и выход в меню */}
+      <div className="ma-topbar-actions">
+        <button
+          type="button"
+          className="ma-topbar-clear"
+          onClick={() => socket.emit("board:clear")}
+        >
+          Очистить доску
+        </button>
+        <button type="button" className="ma-topbar-leave" onClick={leaveRoom}>
+          В меню
+        </button>
+      </div>
     </>
   );
 }

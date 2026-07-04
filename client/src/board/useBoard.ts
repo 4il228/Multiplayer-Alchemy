@@ -24,6 +24,53 @@ interface DragState {
   offsetY: number;
   lastX: number;
   lastY: number;
+  /** Курсор за пределами доски: чип подменён DOM-«призраком», дроп удалит элемент. */
+  outside: boolean;
+}
+
+/**
+ * DOM-«призрак» перетаскиваемого чипа за пределами доски. Pixi-канвас обрезан
+ * границами панели доски, поэтому вне её чип рисуется обычным DOM-элементом
+ * поверх всего экрана + красный бейдж-корзина как знак «отпустишь — удалится».
+ */
+interface GhostView {
+  root: HTMLDivElement;
+  icon: HTMLSpanElement;
+  name: HTMLSpanElement;
+}
+
+function createGhost(): GhostView {
+  const root = document.createElement("div");
+  root.style.cssText =
+    "position:fixed;z-index:1000;pointer-events:none;display:none;" +
+    "transform:translate(-50%,-50%);";
+
+  // Чип в стиле glass-pill из tokens.md, но с плотным фоном (вне доски фон светлее)
+  // и красной обводкой опасности (#E63946 — красный из палитры игроков).
+  const chip = document.createElement("div");
+  chip.style.cssText =
+    "display:flex;align-items:center;gap:8px;padding:8px 16px;" +
+    "background:rgba(48,41,33,0.92);border:1.5px solid rgba(230,57,70,0.8);" +
+    "border-radius:9999px;font-family:Montserrat,Inter,sans-serif;font-size:14px;" +
+    "font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#efe0d4;" +
+    "box-shadow:0 0 16px rgba(230,57,70,0.45);";
+
+  const icon = document.createElement("span");
+  icon.style.fontSize = "18px";
+  const name = document.createElement("span");
+  chip.append(icon, name);
+
+  const badge = document.createElement("div");
+  badge.textContent = "🗑️";
+  badge.style.cssText =
+    "position:absolute;top:-16px;right:-12px;width:28px;height:28px;" +
+    "display:flex;align-items:center;justify-content:center;" +
+    "background:#e63946;border-radius:9999px;font-size:14px;" +
+    "box-shadow:0 2px 8px rgba(0,0,0,0.4);";
+
+  root.append(chip, badge);
+  document.body.appendChild(root);
+  return { root, icon, name };
 }
 
 export function useBoard(): RefObject<HTMLDivElement | null> {
@@ -36,6 +83,7 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
     const scene = new BoardScene();
     let cancelled = false;
     let drag: DragState | null = null;
+    let ghost: GhostView | null = null;
     /** Актуальные локи комнаты: instanceId -> socketId владельца. */
     const locks = new Map<string, string>();
     const disposers: Array<() => void> = [];
@@ -56,8 +104,29 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
       scene.lockInstance(instanceId, player?.color ?? "#a08e7c", player?.name ?? "", isSelf);
     };
 
+    const moveGhost = (clientX: number, clientY: number): void => {
+      if (!ghost) return;
+      ghost.root.style.left = `${clientX}px`;
+      ghost.root.style.top = `${clientY}px`;
+    };
+
+    const showGhost = (instanceId: string, clientX: number, clientY: number): void => {
+      if (!ghost) ghost = createGhost();
+      const info = scene.getInstanceInfo(instanceId);
+      ghost.icon.textContent = info?.icon ?? "❔";
+      ghost.name.textContent = (info?.name ?? "").toUpperCase();
+      ghost.root.style.display = "block";
+      moveGhost(clientX, clientY);
+    };
+
+    const hideGhost = (): void => {
+      if (ghost) ghost.root.style.display = "none";
+    };
+
     const cancelDrag = (instanceId: string): void => {
       if (drag?.instanceId !== instanceId) return;
+      hideGhost();
+      scene.setInstanceVisible(instanceId, true);
       scene.setInstanceTarget(instanceId, drag.originX, drag.originY, true);
       drag = null;
     };
@@ -66,6 +135,7 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
       scene.reset();
       locks.clear();
       drag = null;
+      hideGhost();
       for (const instance of Object.values(roomState.boardInstances)) {
         scene.addInstance(instance, elements.get(instance.elementId));
         if (instance.lockedBy) {
@@ -99,6 +169,7 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
         offsetY: py - visible.y,
         lastX: visible.x,
         lastY: visible.y,
+        outside: false,
       };
       // Оптимистичный захват (SPEC §4.3): обводка сразу, сервер подтвердит/откажет.
       const self = selfId();
@@ -106,23 +177,65 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
       socket.emit("element:lock", { instanceId });
     };
 
-    const onMouseMove = (e: MouseEvent): void => {
-      const { x, y } = toBoard(e);
-      sendCursor(x, y);
-      if (drag) {
-        const nx = x - drag.offsetX;
-        const ny = y - drag.offsetY;
-        drag.lastX = nx;
-        drag.lastY = ny;
-        scene.setInstanceTarget(drag.instanceId, nx, ny, true); // Optimistic UI
-        sendDrag(drag.instanceId, nx, ny);
-      }
+    const isOutside = (e: MouseEvent): boolean => {
+      const rect = host.getBoundingClientRect();
+      return (
+        e.clientX < rect.left ||
+        e.clientX > rect.right ||
+        e.clientY < rect.top ||
+        e.clientY > rect.bottom
+      );
     };
 
-    const onMouseUp = (): void => {
+    // Слушаем window, а не host: во время драга курсор может покидать доску.
+    const onMouseMove = (e: MouseEvent): void => {
+      const outside = isOutside(e);
+      const { x, y } = toBoard(e);
+
+      if (!drag) {
+        if (!outside) sendCursor(x, y);
+        return;
+      }
+
+      if (outside !== drag.outside) {
+        drag.outside = outside;
+        if (outside) {
+          // Чип «покинул» доску: в Pixi его не нарисовать (канвас обрезан
+          // панелью), поэтому подменяем DOM-призраком с бейджем удаления.
+          scene.setInstanceVisible(drag.instanceId, false);
+          showGhost(drag.instanceId, e.clientX, e.clientY);
+        } else {
+          hideGhost();
+          scene.setInstanceVisible(drag.instanceId, true);
+        }
+      }
+
+      // Для сервера (и остальных игроков) координаты прижимаются к краю доски.
+      const rect = host.getBoundingClientRect();
+      const nx = Math.max(0, Math.min(rect.width, x)) - drag.offsetX;
+      const ny = Math.max(0, Math.min(rect.height, y)) - drag.offsetY;
+      drag.lastX = nx;
+      drag.lastY = ny;
+      scene.setInstanceTarget(drag.instanceId, nx, ny, true); // Optimistic UI
+      sendDrag(drag.instanceId, nx, ny);
+      sendCursor(Math.max(0, Math.min(rect.width, x)), Math.max(0, Math.min(rect.height, y)));
+
+      if (outside) moveGhost(e.clientX, e.clientY);
+    };
+
+    const onMouseUp = (e: MouseEvent): void => {
       if (!drag) return;
       const { instanceId, lastX, lastY } = drag;
       drag = null;
+      hideGhost();
+
+      // Дроп за пределами доски — удаление. Чип остаётся скрытым до
+      // подтверждения: сервер проверит лок и разошлёт board:removed всем.
+      if (isOutside(e)) {
+        socket.emit("element:delete", { instanceId });
+        return;
+      }
+
       locks.delete(instanceId);
       scene.unlockInstance(instanceId); // сервер продублирует element:unlocked
       socket.emit("element:release", { instanceId, x: lastX, y: lastY });
@@ -170,6 +283,9 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
 
     const onLockDenied = ({ instanceId }: { instanceId: string }): void => {
       cancelDrag(instanceId);
+      // Гонка: чип скрыт «дропом наружу», но лок не наш — element:delete
+      // сервер проигнорирует, board:removed не придёт. Возвращаем чип.
+      scene.setInstanceVisible(instanceId, true);
       const owner = locks.get(instanceId);
       if (owner && owner !== selfId()) {
         applyLockVisual(instanceId, owner); // восстановить обводку реального владельца
@@ -197,6 +313,7 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
 
     const onCleared = (): void => {
       drag = null;
+      hideGhost();
       locks.clear();
       scene.clear();
     };
@@ -250,12 +367,12 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
       const current = getGameState();
       if (current.roomState) populate(current.roomState, current.elements);
 
-      host.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mousemove", onMouseMove);
       host.addEventListener("dragover", onDragOver);
       host.addEventListener("drop", onDrop);
       window.addEventListener("mouseup", onMouseUp);
       disposers.push(() => {
-        host.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mousemove", onMouseMove);
         host.removeEventListener("dragover", onDragOver);
         host.removeEventListener("drop", onDrop);
         window.removeEventListener("mouseup", onMouseUp);
@@ -292,6 +409,7 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
     return () => {
       cancelled = true;
       disposers.forEach((dispose) => dispose());
+      ghost?.root.remove();
       scene.destroy();
     };
   }, []);

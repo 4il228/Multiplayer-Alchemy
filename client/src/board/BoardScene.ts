@@ -60,6 +60,9 @@ interface ChipView {
   pill: Graphics;
   width: number;
   height: number;
+  /** Иконка и имя элемента — для DOM-«призрака» при драге за пределы доски. */
+  icon: string;
+  name: string;
   targetX: number;
   targetY: number;
   /** Залочен мной: двигается мгновенно, LERP не применяется (Optimistic UI). */
@@ -167,6 +170,8 @@ export class BoardScene {
       pill,
       width,
       height,
+      icon: element?.icon ?? "❔",
+      name: element?.name ?? instance.elementId,
       targetX: instance.x,
       targetY: instance.y,
       ownedBySelf: false,
@@ -206,6 +211,18 @@ export class BoardScene {
     view.targetX = x;
     view.targetY = y;
     if (instant) view.root.position.set(x, y);
+  }
+
+  /** Скрыть/показать чип (drag за пределами доски: чип подменяется DOM-«призраком»). */
+  setInstanceVisible(instanceId: string, visible: boolean): void {
+    const view = this.chips.get(instanceId);
+    if (!view) return;
+    view.root.visible = visible;
+  }
+
+  getInstanceInfo(instanceId: string): { icon: string; name: string } | null {
+    const view = this.chips.get(instanceId);
+    return view ? { icon: view.icon, name: view.name } : null;
   }
 
   getInstancePosition(instanceId: string): { x: number; y: number } | null {

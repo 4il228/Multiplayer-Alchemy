@@ -161,6 +161,19 @@ export function registerBoardHandlers(io: TypedServer, socket: TypedSocket, ctx:
     });
   });
 
+  socket.on("element:delete", ({ instanceId }) => {
+    const room = roomManager.getRoomBySocket(socket.id);
+    const instance = room?.boardInstances[instanceId];
+    if (!room || !instance) return;
+    // Удалять может только игрок, который держит элемент (владелец лока):
+    // защищает от гонки, когда лок в итоге достался другому.
+    if (instance.lockedBy !== socket.id) return;
+
+    delete room.boardInstances[instanceId];
+    delete bufferOf(room.roomId)[instanceId];
+    io.to(room.roomId).emit("board:removed", { instanceIds: [instanceId] });
+  });
+
   socket.on("board:clear", () => {
     const room = roomManager.getRoomBySocket(socket.id);
     if (!room) return;

@@ -48,6 +48,19 @@ export function useGameStore(): GameStoreState {
   return useSyncExternalStore(subscribe, getGameState);
 }
 
+/**
+ * Выход в главное меню. Своего события в контракте нет (types.ts заморожен),
+ * поэтому используем цикл disconnect/connect: сервер на "disconnect" сам
+ * снимает локи игрока и рассылает room:player_left. Ключ комнаты удаляем
+ * до реконнекта, чтобы авто-re-join (App.tsx) не вернул игрока обратно.
+ */
+export function leaveRoom(): void {
+  sessionStorage.removeItem(SESSION_ROOM_KEY);
+  socket.disconnect();
+  socket.connect();
+  setState({ phase: "lobby", roomState: null, lastError: null });
+}
+
 // --- Подписки на события сервера (SPEC.md §3.2) ---
 
 socket.on("room:state", (payload) => {

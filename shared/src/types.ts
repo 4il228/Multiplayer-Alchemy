@@ -56,6 +56,9 @@ export interface ClientToServerEvents {
   "element:lock": (payload: { instanceId: string }) => void;
   "element:drag": (payload: { instanceId: string; x: number; y: number }) => void;
   "element:release": (payload: { instanceId: string; x: number; y: number }) => void;
+  // Удаление своего (залоченного) инстанса — drop за пределами доски.
+  // Подтверждение всем — существующим board:removed.
+  "element:delete": (payload: { instanceId: string }) => void;
   "board:clear": () => void;
 }
 
