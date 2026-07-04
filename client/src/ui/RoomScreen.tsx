@@ -2,6 +2,9 @@
 // Слоты шапки/сайдбара/тостов заполнит фаза C3; центр — Pixi-доска (useBoard).
 import type { CSSProperties } from "react";
 import { useBoard } from "../board/useBoard";
+import TopBar from "./TopBar";
+import Library from "./Library";
+import Toasts from "./Toasts";
 
 // Значения — из design/tokens.md, секция «Game screen».
 const styles: Record<string, CSSProperties> = {
@@ -69,16 +72,19 @@ export default function RoomScreen() {
 
   return (
     <div style={styles.screen}>
-      {/* Слот шапки — заполнит C3 (<TopBar/>) */}
-      <header className="room-topbar-slot" style={styles.topBarSlot} />
+      <header className="room-topbar-slot" style={styles.topBarSlot}>
+        <TopBar />
+      </header>
       <main style={styles.main}>
         <section style={styles.boardSection}>
           <div ref={boardRef} style={styles.boardHost} />
-          {/* Слот тостов — заполнит C3 (<Toasts/>) */}
-          <div className="room-toasts-slot" style={styles.toastsSlot} />
+          <div className="room-toasts-slot" style={styles.toastsSlot}>
+            <Toasts />
+          </div>
         </section>
-        {/* Слот сайдбара-библиотеки — заполнит C3 (<Library/>) */}
-        <aside className="room-sidebar-slot" style={styles.sidebarSlot} />
+        <aside className="room-sidebar-slot" style={styles.sidebarSlot}>
+          <Library />
+        </aside>
       </main>
     </div>
   );
