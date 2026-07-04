@@ -14,7 +14,7 @@ import type {
   ServerToClientEvents,
 } from "@multialchemy/shared";
 import { RoomManager } from "./roomManager";
-import { registerBoardHandlers } from "./gameLogic";
+import { flushBoardUpdates, registerBoardHandlers } from "./gameLogic";
 import type { GameContext } from "./gameLogic";
 
 const dataDir = join(dirname(fileURLToPath(import.meta.url)), "data");
@@ -99,7 +99,7 @@ setInterval(() => {
       cursors[id] = room.players[id]!.cursor;
     }
     io.to(room.roomId).emit("room:sync_cursors", cursors);
-    // TODO(S2): вызов flushBoardUpdates(io, room)
+    flushBoardUpdates(io, room);
   }
 }, 1000 / SERVER_BATCH_HZ);
 
