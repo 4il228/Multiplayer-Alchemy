@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AetherAlchemist | Multiplayer Lobby</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&amp;family=Montserrat:wght@500;700&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Montserrat:wght@100..900&amp;family=Playfair+Display:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#ffd09f",
+                        "on-primary-fixed-variant": "#673d00",
+                        "secondary": "#d3bcf9",
+                        "error-container": "#93000a",
+                        "on-secondary": "#382759",
+                        "on-tertiary": "#2f2e43",
+                        "secondary-fixed": "#ebdcff",
+                        "surface-container": "#261e17",
+                        "surface-bright": "#40382f",
+                        "on-background": "#efe0d4",
+                        "inverse-on-surface": "#372f27",
+                        "surface-variant": "#3c332b",
+                        "surface-dim": "#19120b",
+                        "inverse-surface": "#efe0d4",
+                        "outline": "#a08e7c",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-fixed": "#e2e0fc",
+                        "secondary-container": "#4f3d71",
+                        "on-error": "#690005",
+                        "on-secondary-fixed": "#231043",
+                        "tertiary-fixed-dim": "#c6c4df",
+                        "primary-container": "#ffab40",
+                        "surface": "#19120b",
+                        "on-primary-fixed": "#2b1700",
+                        "surface-container-highest": "#3c332b",
+                        "primary-fixed": "#ffddba",
+                        "surface-container-high": "#302921",
+                        "surface-container-lowest": "#130d07",
+                        "tertiary": "#d8d6f1",
+                        "on-secondary-fixed-variant": "#4f3d71",
+                        "on-tertiary-container": "#4a4a60",
+                        "surface-container-low": "#211a13",
+                        "primary-fixed-dim": "#ffb866",
+                        "error": "#ffb4ab",
+                        "tertiary-container": "#bcbad5",
+                        "on-tertiary-fixed": "#1a1a2e",
+                        "on-surface": "#efe0d4",
+                        "background": "#19120b",
+                        "surface-tint": "#ffb866",
+                        "on-primary-container": "#6e4200",
+                        "outline-variant": "#534435",
+                        "secondary-fixed-dim": "#d3bcf9",
+                        "on-secondary-container": "#c1abe7",
+                        "on-tertiary-fixed-variant": "#45455b",
+                        "on-primary": "#482900",
+                        "inverse-primary": "#875200",
+                        "on-surface-variant": "#d8c3b0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "48px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "unit": "4px",
+                        "lg": "24px",
+                        "container-max": "1440px",
+                        "gutter": "20px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Playfair Display"],
+                        "headline-md": ["Playfair Display"],
+                        "headline-lg-mobile": ["Playfair Display"],
+                        "display-lg": ["Playfair Display"],
+                        "label-sm": ["Montserrat"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-bold": ["Montserrat"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "headline-md": ["32px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-sm": ["12px", {"lineHeight": "1.0", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-bold": ["14px", {"lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        .glass-panel {
+            background: rgba(45, 27, 77, 0.4);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .gold-glow {
+            box-shadow: 0 0 20px rgba(255, 171, 64, 0.4);
+        }
+        
+        .gold-glow-hover:hover {
+            box-shadow: 0 0 30px rgba(255, 171, 64, 0.6);
+            transform: scale(1.02);
+            transition: all 0.3s ease;
+        }
+
+        .shimmer-bg {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .shimmer-bg::after {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 208, 159, 0.05), transparent);
+            animation: shimmer 10s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes shimmer {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .floating-element {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background overflow-hidden selection:bg-primary selection:text-on-primary">
+<!-- Mystical Background Shader -->
+<!-- STITCH_SHADER_START:ANIMATION_2 class="absolute inset-0 w-full h-full z-0 opacity-80" -->
+<div class="absolute inset-0 w-full h-full z-0 opacity-80" style="display:block;">
+<canvas id="shader-canvas-ANIMATION_2" style="display:block;width:100%;height:100%"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('shader-canvas-ANIMATION_2');
+
+  // Sync the WebGL drawing-buffer size with the CSS-driven layout size.
+  // This fires on initial layout and whenever the element is resized.
+  function syncSize() {
+    const w = canvas.clientWidth  || 1280;
+    const h = canvas.clientHeight || 720;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width  = w;
+      canvas.height = h;
+    }
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(syncSize).observe(canvas);
+  }
+  syncSize();
+
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+  const vs = `attribute vec2 a_position;
+varying vec2 v_texCoord;
+void main() {
+  v_texCoord = a_position * 0.5 + 0.5;
+  gl_Position = vec4(a_position, 0.0, 1.0);
+}`;
+  const fs = `precision highp float;
+varying vec2 v_texCoord;
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+
+float hash(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+}
+
+void main() {
+    vec2 uv = v_texCoord;
+    vec2 p = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+    
+    // Deep mystical background colors
+    vec3 color1 = vec3(0.05, 0.02, 0.1); // Deep purple
+    vec3 color2 = vec3(0.02, 0.05, 0.1); // Midnight blue
+    vec3 bg = mix(color1, color2, uv.y + sin(u_time * 0.2) * 0.2);
+    
+    // Floating particles
+    float particles = 0.0;
+    for(float i = 0.0; i < 40.0; i++) {
+        vec2 pos = vec2(hash(vec2(i, 1.0)), hash(vec2(i, 2.0)));
+        pos.y = fract(pos.y + u_time * 0.05 * (0.5 + hash(vec2(i, 3.0))));
+        pos.x += sin(u_time * 0.2 + i) * 0.02;
+        
+        float dist = length(uv - pos);
+        float size = 0.001 + 0.002 * hash(vec2(i, 4.0));
+        particles += (size / dist) * step(pos.y, 1.0);
+    }
+    
+    // Gold/Amber glow
+    vec3 particleColor = vec3(1.0, 0.7, 0.3) * particles;
+    
+    gl_FragColor = vec4(bg + particleColor * 0.5, 1.0);
+}`;
+  function cs(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const pos = gl.getAttribLocation(prog, 'a_position');
+  gl.enableVertexAttribArray(pos);
+  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+  const uTime = gl.getUniformLocation(prog, 'u_time');
+  const uRes = gl.getUniformLocation(prog, 'u_resolution');
+  const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+
+  // u_mouse is in pixel coordinates matching u_resolution (ShaderToy convention).
+  // Shaders that need normalized coords should use: u_mouse / u_resolution.
+  let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+  window.addEventListener('mousemove', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width && rect.height) {
+      const nx = (event.clientX - rect.left) / rect.width;
+      const ny = 1.0 - (event.clientY - rect.top) / rect.height;
+      mouse.x = nx * canvas.width;
+      mouse.y = ny * canvas.height;
+    }
+  });
+
+  function render(t) {
+    if (typeof ResizeObserver === 'undefined') syncSize();
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    if (uTime) gl.uniform1f(uTime, t * 0.001);
+    if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
+    if (uMouse) gl.uniform2f(uMouse, mouse.x, mouse.y);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render(0);
+})();
+</script>
+</div>
+<!-- STITCH_SHADER_END:ANIMATION_2 -->
+<!-- Top Navigation (Shell Implementation) -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-lg py-md bg-transparent">
+<div class="font-headline-md text-headline-md font-bold text-primary tracking-tight">
+            AetherAlchemist
+        </div>
+<div class="flex gap-md items-center">
+<button class="text-on-surface-variant hover:text-primary-container transition-colors Active: scale-95 transition-transform">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary-container transition-colors Active: scale-95 transition-transform">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</nav>
+<!-- Main Lobby Container -->
+<main class="relative z-10 w-full min-h-screen flex items-center justify-center px-gutter">
+<!-- Central Glass Card -->
+<div class="glass-panel w-full max-w-[520px] rounded-xl p-xl flex flex-col items-center shimmer-bg border border-white/5">
+<!-- Logo Section -->
+<div class="mb-lg floating-element">
+<img class="w-32 h-32 md:w-40 md:h-40 object-contain filter drop-shadow-[0_0_15px_rgba(255,171,64,0.3)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpdfpyM8aMW5jVRX3OCVZ-os-u0K1WdtQ6cWfBHpSmnDU_3URz1g906hBf8kzoNm5whKRtUnknKUvb_QmVs2XO7apZ6Yb5zDe-EOrt9LUnAHTYCFdeR8o4Nmw4WbsTvBOIyfeNn79sPsDMXKB903O3tjydhAkvY3NJ54BtYv6r0k8ydD8szwzLoifyToNxpCOIv0vEpA_17WqcZc9-Uqlw9W5Av_prtj0-lK4K7Yyxzh_bf50rfHk8jRBqDUvlbarF3eMElBhfx1I"/>
+</div>
+<!-- Header -->
+<div class="text-center mb-xl">
+<h1 class="font-display-lg text-display-lg text-primary mb-xs">Multiplayer Alchemy</h1>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80">
+                    Enter the laboratory and begin your transmutation.
+                </p>
+</div>
+<!-- Form Content -->
+<div class="w-full space-y-lg">
+<!-- Alchemist Name Input -->
+<div class="space-y-sm">
+<label class="font-label-bold text-label-bold text-secondary uppercase tracking-widest block px-xs">
+                        Alchemist Name
+                    </label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline opacity-60">
+                            magic_button
+                        </span>
+<input class="w-full bg-surface-container-lowest border-2 border-outline/20 rounded-lg py-md pl-xl pr-md font-body-md text-on-surface focus:border-primary focus:ring-0 transition-all placeholder:text-outline/40" maxlength="20" placeholder="The Great Magus" type="text"/>
+</div>
+</div>
+<!-- Primary Action -->
+<button class="w-full bg-primary-container text-on-primary-fixed font-label-bold text-label-bold uppercase py-lg rounded-lg gold-glow gold-glow-hover flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span>
+                    Create Room
+                </button>
+<!-- Arcane Divider -->
+<div class="relative flex items-center py-sm">
+<div class="flex-grow border-t border-primary/20"></div>
+<span class="mx-md text-primary opacity-60 select-none">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+</span>
+<div class="flex-grow border-t border-primary/20"></div>
+</div>
+<!-- Join Section -->
+<div class="grid grid-cols-1 md:grid-cols-5 gap-md">
+<div class="md:col-span-3">
+<input class="w-full bg-surface-container/30 border-2 border-white/10 rounded-lg py-md px-md text-center font-headline-sm text-headline-sm tracking-[0.2em] text-secondary placeholder:text-secondary/30 focus:border-secondary focus:ring-0 transition-all uppercase" maxlength="6" placeholder="CODE" type="text"/>
+</div>
+<div class="md:col-span-2">
+<button class="w-full h-full border-2 border-primary/40 text-primary font-label-bold text-label-bold uppercase rounded-lg hover:bg-primary/10 transition-colors flex items-center justify-center">
+                            Join
+                        </button>
+</div>
+</div>
+</div>
+<!-- Footer Stats / Flavor -->
+<div class="mt-xl flex justify-between w-full text-on-surface-variant/40 px-xs">
+<div class="flex items-center gap-xs font-label-sm text-label-sm">
+<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    42 Alchemists Online
+                </div>
+<div class="font-label-sm text-label-sm italic">
+                    v1.0.4-arcane
+                </div>
+</div>
+</div>
+<!-- Atmospheric Elements -->
+<div class="fixed bottom-lg left-lg hidden md:flex flex-col gap-sm">
+<div class="flex items-center gap-md glass-panel p-md rounded-lg border border-white/10">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">menu_book</span>
+</div>
+<div>
+<div class="font-label-bold text-label-bold text-on-surface">Tutorial</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Master the basics</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Micro-interaction script -->
+<script>
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', () => {
+                btn.style.transform = 'scale(0.95)';
+            });
+            btn.addEventListener('mouseup', () => {
+                btn.style.transform = '';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = '';
+            });
+        });
+
+        // Ambient sound toggle simulation (visual only)
+        const soundBtn = document.createElement('button');
+        soundBtn.className = 'fixed bottom-lg right-lg p-md glass-panel rounded-full text-primary border border-white/10 hover:bg-primary/10 transition-all z-50';
+        soundBtn.innerHTML = '<span class="material-symbols-outlined">volume_up</span>';
+        document.body.appendChild(soundBtn);
+        
+        let muted = false;
+        soundBtn.addEventListener('click', () => {
+            muted = !muted;
+            soundBtn.innerHTML = `<span class="material-symbols-outlined">${muted ? 'volume_off' : 'volume_up'}</span>`;
+        });
+    </script>
+</body></html>
