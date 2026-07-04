@@ -7,6 +7,9 @@ import type { Element, Recipe } from "@multialchemy/shared";
 const dir = dirname(fileURLToPath(import.meta.url));
 const elements: Element[] = JSON.parse(readFileSync(join(dir, "elements.json"), "utf8"));
 const recipes: Recipe[] = JSON.parse(readFileSync(join(dir, "recipes.json"), "utf8"));
+const hints: { [elementId: string]: string } = JSON.parse(
+  readFileSync(join(dir, "hints.json"), "utf8"),
+);
 
 const errors: string[] = [];
 const elementIds = new Set(elements.map((e) => e.id));
@@ -55,6 +58,22 @@ for (const r of recipes) {
   recipeIds.add(r.id);
 }
 
+// hints.json: косвенная подсказка на каждый результат рецепта
+const hintIds = new Set(Object.keys(hints));
+for (const r of recipes) {
+  if (!hints[r.result]) {
+    errors.push(`hints.json: нет подсказки для результата "${r.result}" (рецепт "${r.id}")`);
+  }
+}
+for (const id of hintIds) {
+  if (!recipes.some((r) => r.result === id)) {
+    errors.push(`hints.json: подсказка для "${id}" — нет такого результата в recipes.json`);
+  }
+  if (!elementIds.has(id)) {
+    errors.push(`hints.json: подсказка для "${id}" — элемент отсутствует в elements.json`);
+  }
+}
+
 // (4) каждый небазовый элемент достижим от базовых (BFS по рецептам)
 const reachable = new Set(elements.filter((e) => e.isBase).map((e) => e.id));
 let grew = true;
@@ -79,4 +98,4 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log(`OK: ${elements.length} elements, ${recipes.length} recipes`);
+console.log(`OK: ${elements.length} elements, ${recipes.length} recipes, ${hintIds.size} hints`);

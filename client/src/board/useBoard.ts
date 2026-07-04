@@ -84,6 +84,9 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
     let cancelled = false;
     let drag: DragState | null = null;
     let ghost: GhostView | null = null;
+    let panning = false;
+    let lastPanX = 0;
+    let lastPanY = 0;
     /** Актуальные локи комнаты: instanceId -> socketId владельца. */
     const locks = new Map<string, string>();
     const disposers: Array<() => void> = [];
@@ -92,7 +95,7 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
     const playerOf = (socketId: string): Player | undefined =>
       getGameState().roomState?.players[socketId];
 
-    const toBoard = (e: MouseEvent): { x: number; y: number } => {
+    const toHost = (e: MouseEvent | DragEvent): { x: number; y: number } => {
       const rect = host.getBoundingClientRect();
       return { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
@@ -178,22 +181,34 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
     };
 
     const isOutside = (e: MouseEvent): boolean => {
-      const rect = host.getBoundingClientRect();
-      return (
-        e.clientX < rect.left ||
-        e.clientX > rect.right ||
-        e.clientY < rect.top ||
-        e.clientY > rect.bottom
-      );
+      const { x, y } = toHost(e);
+      return !scene.isInsideBoardScreenPoint(x, y);
     };
 
     // Слушаем window, а не host: во время драга курсор может покидать доску.
+    const onMouseDown = (e: MouseEvent): void => {
+      if (e.button !== 1 || !scene.canPan()) return;
+      e.preventDefault();
+      panning = true;
+      lastPanX = e.clientX;
+      lastPanY = e.clientY;
+      host.style.cursor = "grabbing";
+    };
+
     const onMouseMove = (e: MouseEvent): void => {
+      if (panning) {
+        scene.panBy(e.clientX - lastPanX, e.clientY - lastPanY);
+        lastPanX = e.clientX;
+        lastPanY = e.clientY;
+        return;
+      }
+
       const outside = isOutside(e);
-      const { x, y } = toBoard(e);
+      const hostPos = toHost(e);
+      const boardPos = scene.screenToBoard(hostPos.x, hostPos.y);
 
       if (!drag) {
-        if (!outside) sendCursor(x, y);
+        if (!outside) sendCursor(boardPos.x, boardPos.y);
         return;
       }
 
@@ -210,20 +225,27 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
         }
       }
 
-      // Для сервера (и остальных игроков) координаты прижимаются к краю доски.
-      const rect = host.getBoundingClientRect();
-      const nx = Math.max(0, Math.min(rect.width, x)) - drag.offsetX;
-      const ny = Math.max(0, Math.min(rect.height, y)) - drag.offsetY;
+      // Для сервера (и остальных игроков) все координаты живут в общей
+      // логической доске фиксированного размера.
+      const clamped = scene.clampBoardPoint(boardPos.x, boardPos.y);
+      const nx = clamped.x - drag.offsetX;
+      const ny = clamped.y - drag.offsetY;
       drag.lastX = nx;
       drag.lastY = ny;
       scene.setInstanceTarget(drag.instanceId, nx, ny, true); // Optimistic UI
       sendDrag(drag.instanceId, nx, ny);
-      sendCursor(Math.max(0, Math.min(rect.width, x)), Math.max(0, Math.min(rect.height, y)));
+      sendCursor(clamped.x, clamped.y);
 
       if (outside) moveGhost(e.clientX, e.clientY);
     };
 
     const onMouseUp = (e: MouseEvent): void => {
+      if (e.button === 1 && panning) {
+        panning = false;
+        host.style.cursor = "";
+        return;
+      }
+
       if (!drag) return;
       const { instanceId, lastX, lastY } = drag;
       drag = null;
@@ -241,6 +263,10 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
       socket.emit("element:release", { instanceId, x: lastX, y: lastY });
     };
 
+    const onAuxClick = (e: MouseEvent): void => {
+      if (e.button === 1) e.preventDefault();
+    };
+
     // Спавн из библиотеки (C3) через HTML5 DnD.
     const onDragOver = (e: DragEvent): void => {
       if (e.dataTransfer?.types.includes(ELEMENT_DND_MIME)) {
@@ -252,8 +278,11 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
       const elementId = e.dataTransfer?.getData(ELEMENT_DND_MIME);
       if (!elementId) return;
       e.preventDefault();
-      const { x, y } = toBoard(e);
-      socket.emit("element:spawn", { elementId, x, y });
+      const hostPos = toHost(e);
+      if (!scene.isInsideBoardScreenPoint(hostPos.x, hostPos.y)) return;
+      const board = scene.screenToBoard(hostPos.x, hostPos.y);
+      const boardPos = scene.clampBoardPoint(board.x, board.y);
+      socket.emit("element:spawn", { elementId, x: boardPos.x, y: boardPos.y });
     };
 
     // --- Входящие события сервера (SPEC §3.2) ---
@@ -367,15 +396,19 @@ export function useBoard(): RefObject<HTMLDivElement | null> {
       const current = getGameState();
       if (current.roomState) populate(current.roomState, current.elements);
 
+      window.addEventListener("mousedown", onMouseDown);
       window.addEventListener("mousemove", onMouseMove);
       host.addEventListener("dragover", onDragOver);
       host.addEventListener("drop", onDrop);
       window.addEventListener("mouseup", onMouseUp);
+      host.addEventListener("auxclick", onAuxClick);
       disposers.push(() => {
+        window.removeEventListener("mousedown", onMouseDown);
         window.removeEventListener("mousemove", onMouseMove);
         host.removeEventListener("dragover", onDragOver);
         host.removeEventListener("drop", onDrop);
         window.removeEventListener("mouseup", onMouseUp);
+        host.removeEventListener("auxclick", onAuxClick);
       });
 
       socket.on("room:state", onRoomState);

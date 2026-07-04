@@ -20,12 +20,84 @@ export interface GameContext {
   roomManager: RoomManager;
   elementsById: Map<string, Element>;
   recipes: Map<string, Recipe>;
+  /** Косвенные подсказки по elementId результата (data/hints.json). */
+  hintsById: Map<string, string>;
 }
 
 // Буфер инкрементальных изменений драга на комнату (рассылается 20 Гц через flushBoardUpdates)
 const dragBuffers = new Map<string, { [instanceId: string]: Partial<BoardInstance> }>();
 // Метка последней очистки доски на комнату (cooldown board:clear)
 const lastClearAt = new Map<string, number>();
+
+// --- Подсказки при застое (комната минуту без новых открытий) ---
+
+export const HINT_IDLE_MS = 60_000;
+
+// Метка последнего «прогресса» комнаты: новое открытие или показанная подсказка.
+// Отдельная Map, а не поле RoomState: контракт shared заморожен.
+const lastProgressAt = new Map<string, number>();
+/** Последний показанный результат — чтобы не спамить одной и той же подсказкой подряд. */
+const lastHintResult = new Map<string, string>();
+
+const BASE_IDS = new Set(["air", "earth", "fire", "water"]);
+
+/** Чем меньше — тем проще рецепт (оба базовых = 0, один производный = 1, оба = 2). */
+function recipeSimplicity(recipe: Recipe): number {
+  const [a, b] = recipe.ingredients;
+  return (BASE_IDS.has(a) ? 0 : 1) + (BASE_IDS.has(b) ? 0 : 1);
+}
+
+/**
+ * Проверяет все комнаты и рассылает подсказку тем, кто минуту топчется на месте.
+ * Подсказка — про рецепт, у которого оба ингредиента уже открыты, а результат ещё нет.
+ * Выбирается самый простой доступный рецепт (ближе к базовым элементам).
+ */
+export function maybeSendHints(io: TypedServer, ctx: GameContext): void {
+  const now = Date.now();
+  const alive = new Set<string>();
+  for (const room of ctx.roomManager.getAllRooms()) alive.add(room.roomId);
+  for (const roomId of [...lastProgressAt.keys()]) {
+    if (!alive.has(roomId)) {
+      lastProgressAt.delete(roomId);
+      lastHintResult.delete(roomId);
+    }
+  }
+  for (const room of ctx.roomManager.getAllRooms()) {
+    if (Object.keys(room.players).length === 0) continue;
+
+    const last = lastProgressAt.get(room.roomId);
+    if (last === undefined) {
+      // Первое наблюдение комнаты — отсчёт минуты с этого момента.
+      lastProgressAt.set(room.roomId, now);
+      continue;
+    }
+    if (now - last < HINT_IDLE_MS) continue;
+
+    const unlocked = new Set(room.unlockedElements);
+    let candidates = [...ctx.recipes.values()].filter(
+      (recipe) =>
+        !unlocked.has(recipe.result) &&
+        unlocked.has(recipe.ingredients[0]) &&
+        unlocked.has(recipe.ingredients[1]),
+    );
+    if (candidates.length === 0) continue;
+
+    const prevResult = lastHintResult.get(room.roomId);
+    if (prevResult && candidates.length > 1) {
+      candidates = candidates.filter((r) => r.result !== prevResult);
+    }
+
+    const minSimplicity = Math.min(...candidates.map(recipeSimplicity));
+    const tier = candidates.filter((r) => recipeSimplicity(r) === minSimplicity);
+    const recipe = tier[Math.floor(Math.random() * tier.length)]!;
+    const text = ctx.hintsById.get(recipe.result);
+    if (!text) continue;
+
+    lastProgressAt.set(room.roomId, now);
+    lastHintResult.set(room.roomId, recipe.result);
+    io.to(room.roomId).emit("hint:show", { text });
+  }
+}
 
 function bufferOf(roomId: string): { [instanceId: string]: Partial<BoardInstance> } {
   let buf = dragBuffers.get(roomId);
@@ -151,7 +223,11 @@ export function registerBoardHandlers(io: TypedServer, socket: TypedSocket, ctx:
     room.boardInstances[newInstance.id] = newInstance;
 
     const isNewDiscovery = !room.unlockedElements.includes(recipe.result);
-    if (isNewDiscovery) room.unlockedElements.push(recipe.result);
+    if (isNewDiscovery) {
+      room.unlockedElements.push(recipe.result);
+      lastProgressAt.set(room.roomId, Date.now()); // открытие сбрасывает таймер подсказок
+      lastHintResult.delete(room.roomId);
+    }
 
     io.to(room.roomId).emit("craft:success", {
       newInstance,

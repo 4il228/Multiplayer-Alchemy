@@ -84,4 +84,7 @@ export interface ServerToClientEvents {
     discoveredBy: string;
   }) => void;
   "craft:fail": (payload: { instanceId1: string; instanceId2: string }) => void;
+  // Комната давно без открытий: сервер присылает косвенную подсказку,
+  // что можно скрафтить из уже открытых элементов.
+  "hint:show": (payload: { text: string }) => void;
 }

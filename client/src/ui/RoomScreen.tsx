@@ -5,6 +5,7 @@ import { useBoard } from "../board/useBoard";
 import TopBar from "./TopBar";
 import Library from "./Library";
 import Toasts from "./Toasts";
+import HintPopup from "./HintPopup";
 
 // Значения — из design/tokens.md, секция «Game screen».
 const styles: Record<string, CSSProperties> = {
@@ -58,6 +59,14 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 10,
     pointerEvents: "none",
   },
+  hintSlot: {
+    // подсказка алхимика — противоположный от тостов угол доски
+    position: "absolute",
+    bottom: 24,
+    right: 24,
+    zIndex: 10,
+    pointerEvents: "none",
+  },
   sidebarSlot: {
     width: 320,
     flexShrink: 0,
@@ -80,6 +89,9 @@ export default function RoomScreen() {
           <div ref={boardRef} style={styles.boardHost} />
           <div className="room-toasts-slot" style={styles.toastsSlot}>
             <Toasts />
+          </div>
+          <div className="room-hint-slot" style={styles.hintSlot}>
+            <HintPopup />
           </div>
         </section>
         <aside className="room-sidebar-slot" style={styles.sidebarSlot}>

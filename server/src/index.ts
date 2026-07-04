@@ -14,19 +14,22 @@ import type {
   ServerToClientEvents,
 } from "@multialchemy/shared";
 import { RoomManager } from "./roomManager";
-import { flushBoardUpdates, registerBoardHandlers } from "./gameLogic";
+import { flushBoardUpdates, maybeSendHints, registerBoardHandlers } from "./gameLogic";
 import type { GameContext } from "./gameLogic";
 
 const dataDir = join(dirname(fileURLToPath(import.meta.url)), "data");
 const elements: Element[] = JSON.parse(readFileSync(join(dataDir, "elements.json"), "utf-8"));
 const recipeList: Recipe[] = JSON.parse(readFileSync(join(dataDir, "recipes.json"), "utf-8"));
+const hints: { [elementId: string]: string } = JSON.parse(
+  readFileSync(join(dataDir, "hints.json"), "utf-8"),
+);
 
 const elementsById = new Map(elements.map((e) => [e.id, e]));
 const recipes = new Map(recipeList.map((r) => [r.id, r]));
 const baseElementIds = elements.filter((e) => e.isBase).map((e) => e.id);
 
 const roomManager = new RoomManager(baseElementIds);
-const ctx: GameContext = { roomManager, elementsById, recipes };
+const ctx: GameContext = { roomManager, elementsById, recipes, hintsById: new Map(Object.entries(hints)) };
 
 const app = Fastify();
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(app.server, {
@@ -102,6 +105,9 @@ setInterval(() => {
     flushBoardUpdates(io, room);
   }
 }, 1000 / SERVER_BATCH_HZ);
+
+// Подсказки комнатам, которые минуту не открывали ничего нового
+setInterval(() => maybeSendHints(io, ctx), 5_000);
 
 const PORT = 3001;
 app.listen({ port: PORT, host: "0.0.0.0" }).then(() => {

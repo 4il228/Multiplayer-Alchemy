@@ -26,6 +26,11 @@ const LOCKED_SCALE = 1.1; // чип под локом в макете увели
 const LERP_ALPHA = 0.2; // SPEC §4.3, alpha ∈ [0.1, 0.3]
 const POP_DURATION_MS = 220; // анимация масштаба 0→1 результата крафта
 const REPEL_DISTANCE = 28; // визуальный «толчок» чипов при craft:fail
+const BOARD_WORLD_WIDTH = 1600;
+const BOARD_WORLD_HEIGHT = 900;
+const BOARD_BORDER_COLOR = 0xffab40; // primary amber — граница игрового поля
+const BOARD_BORDER_WIDTH = 10;
+const BOARD_CORNER_RADIUS = 16;
 
 // Стрелка курсора 24×24 — контур повторяет SVG-стрелку из game.html.
 const CURSOR_ARROW: number[] = [0, 0, 0, 20, 5.4, 15.6, 9, 23, 12, 21.6, 8.4, 14.2, 15, 14.2];
@@ -88,12 +93,20 @@ export class BoardScene {
   public onChipPointerDown: ((instanceId: string, x: number, y: number) => void) | null = null;
 
   private app: Application | null = null;
+  private world = new Container();
+  private boardFrame = new Graphics();
   private instancesLayer = new Container();
   private cursorsLayer = new Container();
   private chips = new Map<string, ChipView>();
   private cursors = new Map<string, CursorView>();
   private pops: PopAnim[] = [];
   private destroyed = false;
+  private resizeObserver: ResizeObserver | null = null;
+  private panX = 0;
+  private panY = 0;
+  private viewportW = 0;
+  private viewportH = 0;
+  private panInitialized = false;
 
   async init(host: HTMLElement): Promise<void> {
     const app = new Application();
@@ -111,9 +124,16 @@ export class BoardScene {
     }
     this.app = app;
     this.instancesLayer.sortableChildren = true;
-    app.stage.addChild(this.instancesLayer, this.cursorsLayer);
+    this.drawBoardFrame();
+    this.world.addChild(this.boardFrame, this.instancesLayer, this.cursorsLayer);
+    app.stage.addChild(this.world);
     app.ticker.add(this.tick);
     host.appendChild(app.canvas);
+    this.updateViewport(host.clientWidth, host.clientHeight);
+    this.resizeObserver = new ResizeObserver(() => {
+      this.updateViewport(host.clientWidth, host.clientHeight);
+    });
+    this.resizeObserver.observe(host);
   }
 
   destroy(): void {
@@ -121,6 +141,8 @@ export class BoardScene {
     this.chips.clear();
     this.cursors.clear();
     this.pops = [];
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
     if (this.app) {
       this.app.ticker.remove(this.tick);
       this.app.destroy(true, { children: true, texture: true });
@@ -162,7 +184,8 @@ export class BoardScene {
     root.eventMode = "static";
     root.cursor = "grab";
     root.on("pointerdown", (event: FederatedPointerEvent) => {
-      this.onChipPointerDown?.(instance.id, event.global.x, event.global.y);
+      const pos = this.world.toLocal(event.global);
+      this.onChipPointerDown?.(instance.id, pos.x, pos.y);
     });
 
     const view: ChipView = {
@@ -233,6 +256,41 @@ export class BoardScene {
   getInstanceTarget(instanceId: string): { x: number; y: number } | null {
     const view = this.chips.get(instanceId);
     return view ? { x: view.targetX, y: view.targetY } : null;
+  }
+
+  /** Экранная координата внутри host -> координата в общей логической доске. */
+  screenToBoard(x: number, y: number): { x: number; y: number } {
+    const pos = this.world.toLocal({ x, y });
+    return { x: pos.x, y: pos.y };
+  }
+
+  clampBoardPoint(x: number, y: number): { x: number; y: number } {
+    return {
+      x: Math.max(0, Math.min(BOARD_WORLD_WIDTH, x)),
+      y: Math.max(0, Math.min(BOARD_WORLD_HEIGHT, y)),
+    };
+  }
+
+  isInsideBoardScreenPoint(x: number, y: number): boolean {
+    const pos = this.screenToBoard(x, y);
+    return (
+      pos.x >= 0 &&
+      pos.x <= BOARD_WORLD_WIDTH &&
+      pos.y >= 0 &&
+      pos.y <= BOARD_WORLD_HEIGHT
+    );
+  }
+
+  /** Сдвиг камеры при удержании средней кнопки мыши. */
+  panBy(dx: number, dy: number): void {
+    this.panX += dx;
+    this.panY += dy;
+    this.clampPan();
+    this.applyPan();
+  }
+
+  canPan(): boolean {
+    return this.viewportW < BOARD_WORLD_WIDTH || this.viewportH < BOARD_WORLD_HEIGHT;
   }
 
   lockInstance(instanceId: string, ownerColor: string, ownerName: string, isSelf: boolean): void {
@@ -325,6 +383,15 @@ export class BoardScene {
 
   // --- Отрисовка и тикер ---
 
+  /** Видимая рамка фактических границ логического поля 1600×900. */
+  private drawBoardFrame(): void {
+    this.boardFrame.clear();
+    this.boardFrame
+      .roundRect(0, 0, BOARD_WORLD_WIDTH, BOARD_WORLD_HEIGHT, BOARD_CORNER_RADIUS)
+      .fill({ color: 0xffffff, alpha: 0.02 })
+      .stroke({ width: BOARD_BORDER_WIDTH, color: BOARD_BORDER_COLOR, alpha: 0.5 });
+  }
+
   private drawPill(view: ChipView): void {
     const { pill, width: w, height: h } = view;
     pill.clear();
@@ -368,4 +435,45 @@ export class BoardScene {
       });
     }
   };
+
+  /**
+   * Все игроки работают в одном и том же поле фиксированного размера.
+   * На больших экранах оно центрируется целиком, на маленьких — открывается
+   * в масштабе 1:1 и может быть сдвинуто панорамированием.
+   */
+  private updateViewport(width: number, height: number): void {
+    this.viewportW = width;
+    this.viewportH = height;
+    if (
+      !this.panInitialized &&
+      (width < BOARD_WORLD_WIDTH || height < BOARD_WORLD_HEIGHT)
+    ) {
+      this.panX = (width - BOARD_WORLD_WIDTH) / 2;
+      this.panY = (height - BOARD_WORLD_HEIGHT) / 2;
+      this.panInitialized = true;
+    }
+    this.clampPan();
+    this.applyPan();
+  }
+
+  private applyPan(): void {
+    this.world.scale.set(1);
+    this.world.position.set(this.panX, this.panY);
+  }
+
+  private clampPan(): void {
+    if (this.viewportW >= BOARD_WORLD_WIDTH) {
+      this.panX = (this.viewportW - BOARD_WORLD_WIDTH) / 2;
+    } else {
+      const minX = this.viewportW - BOARD_WORLD_WIDTH;
+      this.panX = Math.max(minX, Math.min(0, this.panX));
+    }
+
+    if (this.viewportH >= BOARD_WORLD_HEIGHT) {
+      this.panY = (this.viewportH - BOARD_WORLD_HEIGHT) / 2;
+    } else {
+      const minY = this.viewportH - BOARD_WORLD_HEIGHT;
+      this.panY = Math.max(minY, Math.min(0, this.panY));
+    }
+  }
 }
