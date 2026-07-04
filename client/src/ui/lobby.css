@@ -1,0 +1,319 @@
+/* Экран лобби. Все значения перенесены из design/lobby.html и design/tokens.md (Stitch, D1). */
+
+.lobby {
+  position: relative;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-gutter);
+  overflow: hidden;
+}
+
+/* Glass-карточка */
+.lobby-card {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 520px;
+  padding: var(--space-xl);
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(45, 27, 77, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Shimmer по карточке (10s linear rotate) */
+.lobby-card::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 208, 159, 0.05), transparent);
+  animation: lobby-shimmer 10s infinite linear;
+  pointer-events: none;
+}
+
+@keyframes lobby-shimmer {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Логотип: float 4s ease-in-out ±10px */
+.lobby-logo {
+  margin-bottom: var(--space-lg);
+  animation: lobby-float 4s ease-in-out infinite;
+}
+
+.lobby-logo img {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 15px rgba(255, 171, 64, 0.3));
+}
+
+@keyframes lobby-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.lobby-header {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+/* display-lg: Playfair Display 48/700 */
+.lobby-title {
+  margin: 0 0 var(--space-xs);
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-primary);
+}
+
+/* body-md: Inter 16/400 */
+.lobby-subtitle {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-on-surface-variant);
+  opacity: 0.8;
+}
+
+.lobby-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.lobby-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* label-bold: Montserrat 14/700 uppercase */
+.lobby-label {
+  padding: 0 var(--space-xs);
+  font-family: var(--font-label);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-secondary);
+}
+
+.lobby-input-wrap {
+  position: relative;
+}
+
+.lobby-input-wrap .material-symbols-outlined {
+  position: absolute;
+  left: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-outline);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Инпут имени: фон surface-container-lowest, бордер outline/20 */
+.lobby-name-input {
+  width: 100%;
+  padding: var(--space-md) var(--space-md) var(--space-md) var(--space-xl);
+  background: var(--color-surface-container-lowest);
+  border: 2px solid rgba(160, 142, 124, 0.2);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-on-surface);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.lobby-name-input::placeholder {
+  color: rgba(160, 142, 124, 0.4);
+}
+
+.lobby-name-input:focus {
+  border-color: var(--color-primary);
+}
+
+/* Primary-кнопка Create Room: фон #ffab40, свечение gold-glow */
+.lobby-create-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg) 0;
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-fixed);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-label);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(255, 171, 64, 0.4);
+  transition: all 0.3s ease;
+}
+
+.lobby-create-btn .material-symbols-outlined {
+  font-size: 20px;
+  font-variation-settings: "FILL" 1;
+}
+
+.lobby-create-btn:hover {
+  box-shadow: 0 0 30px rgba(255, 171, 64, 0.6);
+  transform: scale(1.02);
+}
+
+.lobby-create-btn:active {
+  transform: scale(0.95);
+}
+
+/* Разделитель формы: линии primary/20 с иконкой auto_awesome */
+.lobby-divider {
+  display: flex;
+  align-items: center;
+  padding: var(--space-sm) 0;
+}
+
+.lobby-divider::before,
+.lobby-divider::after {
+  content: "";
+  flex-grow: 1;
+  border-top: 1px solid rgba(255, 208, 159, 0.2);
+}
+
+.lobby-divider .material-symbols-outlined {
+  margin: 0 var(--space-md);
+  font-size: 18px;
+  color: var(--color-primary);
+  opacity: 0.6;
+  user-select: none;
+}
+
+.lobby-join-row {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: var(--space-md);
+}
+
+/* Инпут кода: headline-sm Playfair 24/600, tracking 0.2em, цвет secondary */
+.lobby-code-input {
+  width: 100%;
+  padding: var(--space-md);
+  background: rgba(38, 30, 23, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-secondary);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.lobby-code-input::placeholder {
+  color: rgba(211, 188, 249, 0.3);
+}
+
+.lobby-code-input:focus {
+  border-color: var(--color-secondary);
+}
+
+/* Secondary-кнопка Join: ghost, бордер primary/40 */
+.lobby-join-btn {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 2px solid rgba(255, 208, 159, 0.4);
+  border-radius: var(--radius-lg);
+  color: var(--color-primary);
+  font-family: var(--font-label);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.lobby-join-btn:hover {
+  background: rgba(255, 208, 159, 0.1);
+}
+
+.lobby-join-btn:active {
+  transform: scale(0.95);
+}
+
+/* Ошибка входа (палитра error из tokens.md) */
+.lobby-error {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(147, 0, 10, 0.55);
+  border: 1px solid rgba(255, 180, 171, 0.35);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--color-on-error-container);
+}
+
+/* Футер карточки: label-sm Montserrat 12/500 */
+.lobby-footer {
+  margin-top: var(--space-xl);
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 var(--space-xs);
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  color: rgba(216, 195, 176, 0.4);
+}
+
+.lobby-footer .lobby-version {
+  font-style: italic;
+}
