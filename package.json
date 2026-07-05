@@ -4,11 +4,13 @@
   "workspaces": [
     "shared",
     "server",
-    "client"
+    "client",
+    "editor"
   ],
   "scripts": {
     "dev:server": "npm run dev -w server",
     "dev:client": "npm run dev -w client",
+    "dev:editor": "npm run dev -w editor",
     "build": "npm run build -w shared && npm run build -w server && npm run build -w client"
   }
 }

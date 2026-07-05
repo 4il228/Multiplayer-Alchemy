@@ -147,6 +147,7 @@ export function registerBoardHandlers(io: TypedServer, socket: TypedSocket, ctx:
       createdAt: Date.now(),
     };
     room.boardInstances[instance.id] = instance;
+    roomManager.touchRoom(room.roomId);
     io.to(room.roomId).emit("element:spawned", instance);
   });
 
@@ -172,6 +173,7 @@ export function registerBoardHandlers(io: TypedServer, socket: TypedSocket, ctx:
     instance.x = x;
     instance.y = y;
     bufferOf(room.roomId)[instanceId] = { x, y };
+    roomManager.touchRoom(room.roomId);
   });
 
   socket.on("element:release", ({ instanceId, x, y }) => {
@@ -183,6 +185,7 @@ export function registerBoardHandlers(io: TypedServer, socket: TypedSocket, ctx:
     instance.x = x;
     instance.y = y;
     instance.lockedBy = null;
+    roomManager.touchRoom(room.roomId);
     io.to(room.roomId).emit("element:unlocked", { instanceId });
 
     // Поиск ближайшего незалоченного соседа с дистанцией центров < 2R (SPEC §4.1)
@@ -229,6 +232,7 @@ export function registerBoardHandlers(io: TypedServer, socket: TypedSocket, ctx:
       lastHintResult.delete(room.roomId);
     }
 
+    roomManager.touchRoom(room.roomId);
     io.to(room.roomId).emit("craft:success", {
       newInstance,
       destroyedIds: [instanceId, nearest.id],
@@ -247,6 +251,7 @@ export function registerBoardHandlers(io: TypedServer, socket: TypedSocket, ctx:
 
     delete room.boardInstances[instanceId];
     delete bufferOf(room.roomId)[instanceId];
+    roomManager.touchRoom(room.roomId);
     io.to(room.roomId).emit("board:removed", { instanceIds: [instanceId] });
   });
 
@@ -261,6 +266,7 @@ export function registerBoardHandlers(io: TypedServer, socket: TypedSocket, ctx:
 
     room.boardInstances = {};
     dragBuffers.set(room.roomId, {});
+    roomManager.touchRoom(room.roomId);
     io.to(room.roomId).emit("board:cleared");
   });
 }

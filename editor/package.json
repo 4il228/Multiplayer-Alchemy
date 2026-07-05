@@ -1,0 +1,27 @@
+{
+  "name": "@multialchemy/editor",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.mjs",
+  "scripts": {
+    "dev": "concurrently -k \"vite --port 5174 --strictPort\" \"wait-on http://localhost:5174 && electron .\"",
+    "build": "tsc --noEmit && vite build",
+    "start": "electron ."
+  },
+  "dependencies": {
+    "@multialchemy/shared": "*",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "concurrently": "^9.1.2",
+    "electron": "^35.0.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.3",
+    "wait-on": "^8.0.3"
+  }
+}

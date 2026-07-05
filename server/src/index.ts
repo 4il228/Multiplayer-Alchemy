@@ -16,8 +16,10 @@ import type {
 import { RoomManager } from "./roomManager";
 import { flushBoardUpdates, maybeSendHints, registerBoardHandlers } from "./gameLogic";
 import type { GameContext } from "./gameLogic";
+import { RoomStorage } from "./roomStorage";
 
-const dataDir = join(dirname(fileURLToPath(import.meta.url)), "data");
+const srcDir = dirname(fileURLToPath(import.meta.url));
+const dataDir = join(srcDir, "data");
 const elements: Element[] = JSON.parse(readFileSync(join(dataDir, "elements.json"), "utf-8"));
 const recipeList: Recipe[] = JSON.parse(readFileSync(join(dataDir, "recipes.json"), "utf-8"));
 const hints: { [elementId: string]: string } = JSON.parse(
@@ -28,7 +30,25 @@ const elementsById = new Map(elements.map((e) => [e.id, e]));
 const recipes = new Map(recipeList.map((r) => [r.id, r]));
 const baseElementIds = elements.filter((e) => e.isBase).map((e) => e.id);
 
-const roomManager = new RoomManager(baseElementIds);
+const roomStorage = new RoomStorage(join(srcDir, "../.data/rooms.json"));
+let saveTimer: NodeJS.Timeout | null = null;
+let roomManager: RoomManager;
+
+function saveRoomsNow(): void {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  roomStorage.save(roomManager.getPersistedRooms());
+}
+
+function saveRoomsSoon(): void {
+  if (saveTimer) return;
+  saveTimer = setTimeout(saveRoomsNow, 1_000);
+}
+
+roomManager = new RoomManager(baseElementIds, roomStorage.load(), saveRoomsSoon);
+saveRoomsSoon(); // сразу вычищает из файла комнаты старше TTL после загрузки
 const ctx: GameContext = { roomManager, elementsById, recipes, hintsById: new Map(Object.entries(hints)) };
 
 const app = Fastify();
@@ -86,6 +106,7 @@ io.on("connection", (socket) => {
     }
 
     roomManager.removePlayer(socket.id);
+    saveRoomsSoon();
     io.to(room.roomId).emit("room:player_left", { socketId: socket.id });
   });
 
@@ -108,6 +129,19 @@ setInterval(() => {
 
 // Подсказки комнатам, которые минуту не открывали ничего нового
 setInterval(() => maybeSendHints(io, ctx), 5_000);
+
+// Комнаты без активности старше 7 дней удаляются из памяти и runtime-хранилища
+setInterval(() => {
+  roomManager.pruneExpiredRooms();
+}, 60 * 60 * 1000);
+
+function shutdown(): void {
+  saveRoomsNow();
+  process.exit(0);
+}
+
+process.once("SIGINT", shutdown);
+process.once("SIGTERM", shutdown);
 
 const PORT = 3001;
 app.listen({ port: PORT, host: "0.0.0.0" }).then(() => {
